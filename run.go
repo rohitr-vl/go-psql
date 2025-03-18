@@ -4,10 +4,11 @@ import (
 	"context"
 	"log"
 	"reflect"
+	"strconv"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
-	"golang.org/x/text/date"
 
 	"tutorial.sqlc.dev/app/tutorial"
 )
@@ -15,7 +16,8 @@ import (
 func run() error {
 	ctx := context.Background()
 
-	conn, err := pgx.Connect(ctx, "user=pqgotest dbname=pqgotest sslmode=verify-full")
+	conn, err := pgx.Connect(ctx, "user=postgres password=super369 dbname=fleet_track_mgmt sslmode=disable")
+	// conn, err := pgx.Connect(ctx, "postgres://postgres:super369@localhost:5432/fleet_track_mgmt")
 	if err != nil {
 		return err
 	}
@@ -24,38 +26,36 @@ func run() error {
 	queries := tutorial.New(conn)
 
 	// list all authors
-	authors, err := queries.DriverList(ctx)
+	drivers, err := queries.DriverList(ctx)
 	if err != nil {
 		return err
 	}
-	log.Println(authors)
-
+	log.Println(drivers)
+	
 	// create an author
-	insertedAuthor, err := queries.CreateDriver(ctx, tutorial.CreateDriverParams{
-		full_name: "Brian Kernighan",
-		phone_number: "123-456-7890",
-		email: "bkern@vl.com",
-		permanent_address: "1234 Elm St, Springfield, IL 62701",
-		license_number: "DL-4567890",
-		license_valid_until: pgtype.Date{Time: date.New(2023, 1, 1, 0, 0, 0, 0, time.UTC), Status: pgtype.Present},
-		primary_alert: "",
-		is_available: true,
-		is_active: true,
-		created_at: 
+	insertedDriver, err := queries.CreateDriver(ctx, tutorial.CreateDriverParams{
+		FullName: "Brian Kernighan",
+		PhoneNumber: "123-456-7890",
+		Email: "bkern@vl.com",
+		PermanentAddress: "1234 Elm St, Springfield, IL 62701",
+		LicenseNumber: "DL-4567890",
+		LicenseValidUntil: pgtype.Date{Time: time.Date(2029, 12, 30, 0, 0, 0, 0, time.UTC), Valid: true},
+		IsAvailable: true,
+		IsActive: true,
 	})
 	if err != nil {
 		return err
 	}
-	log.Println(insertedAuthor)
+	log.Println(insertedDriver)
 
 	// get the author we just inserted
-	fetchedAuthor, err := queries.GetAuthor(ctx, insertedAuthor.ID)
+	fetchedDriver, err := queries.GetDriver(ctx, strconv.FormatInt(int64(insertedDriver.ID), 10))
 	if err != nil {
 		return err
 	}
 
 	// prints true
-	log.Println(reflect.DeepEqual(insertedAuthor, fetchedAuthor))
+	log.Println(reflect.DeepEqual(insertedDriver, fetchedDriver))
 	return nil
 }
 
